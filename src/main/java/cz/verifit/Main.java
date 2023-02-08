@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 public class Main {
 
     public static void main(String[] args) {
-        String input = "../../AFAshit/benchmark_bases/afa-comparison-benchmarks/bool_comb/ere/date/sat/date_format_days/result.emp";
+        String input;
         boolean alwaysMinimize = false;
         if (args.length == 1) {
             input = args[0];
@@ -27,9 +27,11 @@ public class Main {
                 input = args[1];
             } else {
                 System.err.println("error: Weird arguments");
+                return;
             }
         } else {
             System.err.println("error: Program expects at least one argument (path to .emp file) and possibly option --minimize");
+            return;
         }
 
         try {
