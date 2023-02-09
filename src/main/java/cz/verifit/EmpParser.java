@@ -8,7 +8,6 @@ import dk.brics.automaton.Transition;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -20,20 +19,25 @@ public class EmpParser {
     private boolean alwaysMinimize = false;
 
     private Automaton readFromRange16Nfa(String fileName) throws IOException {
+        if (!(new File(fileName).isFile())) {
+            return Automaton.makeEmpty();
+        }
         org.capnproto.MessageReader message = org.capnproto.Serialize.read((new java.io.FileInputStream(fileName)).getChannel());
         Separated.Range16Nfa.Reader nfa = message.getRoot(Separated.Range16Nfa.factory);
 
         var idToState = new HashMap<Integer, State>();
 
-        for (int stateFromId = 0; stateFromId < nfa.getStates().size(); ++stateFromId) {
+        var transitions = nfa.getStates();
+        var numOfStates = transitions.size();
+        for (int stateFromId = 0; stateFromId < numOfStates; ++stateFromId) {
             idToState.put(stateFromId, new State());
         }
 
-        for (int stateFromId = 0; stateFromId < nfa.getStates().size(); ++stateFromId) {
+        for (int stateFromId = 0; stateFromId < numOfStates; ++stateFromId) {
             State stateFrom = idToState.get(stateFromId);
-            for (var transitions : nfa.getStates().get(stateFromId)) {
-                State stateTo = idToState.get(transitions.getState());
-                for (var range : transitions.getRanges()) {
+            for (var transitionsFromState : transitions.get(stateFromId)) {
+                State stateTo = idToState.get(transitionsFromState.getState());
+                for (var range : transitionsFromState.getRanges()) {
                     Transition trans = new Transition((char) range.getBegin(), (char) range.getEnd(), stateTo);
                     stateFrom.addTransition(trans);
                 }

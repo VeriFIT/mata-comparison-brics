@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 
 public class Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         String input;
         boolean alwaysMinimize = false;
         if (args.length == 1) {
@@ -34,14 +34,14 @@ public class Main {
             return;
         }
 
-        try {
+//        try {
             if ((new EmpParser()).parseAndCheckEmptiness(input, true)) {
                 System.out.println("result: EMPTY");
             } else {
                 System.out.println("result: NOT EMPTY");
             }
-        } catch (Exception ex) {
-            System.err.println("error: " + ex.getMessage());
-        }
+//        } catch (Exception ex) {
+//            System.err.println("error: " + ex.getMessage());
+//        }
     }
 }
