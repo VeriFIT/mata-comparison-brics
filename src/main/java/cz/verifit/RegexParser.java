@@ -93,7 +93,6 @@ public class RegexParser {
         System.err.println("Parsing regex: " + regex);
         try {
             Automaton aut = (new RegExp(regex, RegExp.EMPTY)).toAutomaton(false);
-            System.err.println(aut);
             toRange16Nfa(aut, args[0]);
         } catch (IOException e) {
             System.err.println("Error: " + e.getMessage());
