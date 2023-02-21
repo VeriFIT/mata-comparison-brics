@@ -16,12 +16,11 @@ public class EmpParser {
     private Map<Integer, Automaton> idToAutomaton = new HashMap<Integer, Automaton>();
     private String pathToAutomata = "gen_aut/";
     private int autNumToCheck = -1;
+    private int autNumToCheck1 = -1;
+    private int autNumToCheck2 = -1;
     private boolean alwaysMinimize = false;
 
     private Automaton readFromRange16Nfa(String fileName) throws IOException {
-        if (!(new File(fileName).isFile())) {
-            return Automaton.makeEmpty();
-        }
         org.capnproto.MessageReader message = org.capnproto.Serialize.read((new java.io.FileInputStream(fileName)).getChannel());
         Separated.Range16Nfa.Reader nfa = message.getRoot(Separated.Range16Nfa.factory);
 
@@ -83,7 +82,15 @@ public class EmpParser {
                 throw new RuntimeException("is_empty expects exactly one automaton to check for emptiness");
             }
             autNumToCheck = getAutNumFromName(tokens[1]);
-        } else {
+        }
+        else if (tokens[0].equals("incl")) {
+            if (tokens.length != 3) {
+                throw new RuntimeException("incl expects exactly two automata to check for inclusion");
+            }
+            autNumToCheck1 = getAutNumFromName(tokens[1]);
+            autNumToCheck2 = getAutNumFromName(tokens[2]);
+        }
+        else {
             if (tokens.length < 3) {
                 throw new RuntimeException("Reading operation with not enough arguments");
             }
@@ -136,9 +143,18 @@ public class EmpParser {
             readLine(scanner.nextLine());
         }
 
-        if (autNumToCheck == -1 || !idToAutomaton.containsKey(autNumToCheck)) {
-            throw new RuntimeException("Either trying to check emptiness of undefined automaton or there is no check for emptiness in emp file");
+        if (autNumToCheck == -1) {
+            if (autNumToCheck1 == -1 || autNumToCheck2 == -1) {
+                throw new RuntimeException("No check for emptyness or inclusion found in emp file");
+            }
+            if (!idToAutomaton.containsKey(autNumToCheck1) || !idToAutomaton.containsKey(autNumToCheck2)) {
+                throw new RuntimeException("Trying to check inclusion of undefined automata");
+            }
+            return idToAutomaton.get(autNumToCheck1).subsetOf(idToAutomaton.get(autNumToCheck2));
         } else {
+            if (!idToAutomaton.containsKey(autNumToCheck)) {
+                throw new RuntimeException("Trying to check emptiness of undefined automaton");
+            }
             return idToAutomaton.get(autNumToCheck).isEmpty();
         }
     }
