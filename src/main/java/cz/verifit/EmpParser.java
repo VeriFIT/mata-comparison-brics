@@ -20,7 +20,7 @@ public class EmpParser {
     private int autNumToCheck2 = -1;
     private boolean alwaysMinimize = false;
 
-    private Automaton readFromRange16Nfa(String fileName) throws IOException {
+    public Automaton readFromRange16Nfa(String fileName) throws IOException {
         org.capnproto.MessageReader message = org.capnproto.Serialize.read((new java.io.FileInputStream(fileName)).getChannel());
         Separated.Range16Nfa.Reader nfa = message.getRoot(Separated.Range16Nfa.factory);
 

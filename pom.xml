@@ -44,6 +44,21 @@
                             <finalName>regex-parser</finalName>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>range16nfa-to-mata</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>cz.verifit.MataPrinter</mainClass>
+                                </transformer>
+                            </transformers>
+                            <finalName>range16nfa-to-mata</finalName>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
