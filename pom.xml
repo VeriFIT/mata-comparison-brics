@@ -15,7 +15,7 @@
                 <version>3.4.1</version>
                 <executions>
                     <execution>
-                        <id>brics-emptiness</id>
+                        <id>brics-emp-interpreter</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
@@ -26,11 +26,11 @@
                                     <mainClass>cz.verifit.Brics</mainClass>
                                 </transformer>
                             </transformers>
-                            <finalName>brics-emptiness</finalName>
+                            <finalName>brics-emp-interpreter</finalName>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>automatalib-emptiness</id>
+                        <id>automatalib-emp-interpreter</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
@@ -41,7 +41,7 @@
                                     <mainClass>cz.verifit.Automatalib</mainClass>
                                 </transformer>
                             </transformers>
-                            <finalName>automatalib-emptiness</finalName>
+                            <finalName>automatalib-emp-interpreter</finalName>
                         </configuration>
                     </execution>
                 </executions>
