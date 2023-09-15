@@ -3,7 +3,7 @@ package cz.verifit;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class Main {
+public class Brics {
 
     public static void main(String[] args) {
         String input;
@@ -17,7 +17,7 @@ public class Main {
         }
 
         try {
-            (new EmpParser()).parseAndInterpret(input, pathsToAutomata);
+            (new EmpParser()).parseAndInterpret(input, pathsToAutomata, false);
         } catch (Exception ex) {
             System.err.println("error: " + ex.getMessage());
         }

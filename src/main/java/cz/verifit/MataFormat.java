@@ -4,14 +4,107 @@ import dk.brics.automaton.Automaton;
 import dk.brics.automaton.State;
 import dk.brics.automaton.Transition;
 
+import net.automatalib.automata.fsa.impl.FastNFA;
+import net.automatalib.automata.fsa.impl.FastNFAState;
+import net.automatalib.automata.fsa.impl.compact.CompactDFA;
+import net.automatalib.serialization.aut.AUTWriter;
+import net.automatalib.serialization.dot.GraphDOT;
+import net.automatalib.util.automata.fsa.NFAs;
+import net.automatalib.words.Alphabet;
+import net.automatalib.words.impl.Alphabets;
+
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 
 public class MataFormat {
-    public static Automaton mataToBrics(String fileName) throws IOException {
+    private HashMap<String, Integer> symbolToInt = new HashMap<>();
+    public Alphabet<Integer> automatalibAlph = null;
+
+    public CompactDFA<Integer> mataToAutomatalib(String fileName) throws IOException {
+        FastNFA<Integer> aut = new FastNFA<>(automatalibAlph);
+        var a  = aut.addState();
+
+        // lambda that takes string and returns state for it
+        var idToState = new HashMap<String, FastNFAState>();
+        Function<String,FastNFAState> getStateFromId = stateId -> {
+            if (!idToState.containsKey(stateId)) {
+                idToState.put(stateId, aut.addState());
+            }
+            return idToState.get(stateId);
+        };
+
+        try (Scanner scanner = new Scanner(new File(fileName))) {
+            if (!scanner.hasNextLine()) {
+                throw new RuntimeException("first line of mata file should be type of automaton");
+            } else {
+                String automaton_definition = scanner.nextLine();
+                if (!Objects.equals(automaton_definition, "@NFA-explicit")) {
+                    throw new RuntimeException("automatalib can handle only explicit automata");
+                }
+            }
+
+            while (scanner.hasNextLine()) {
+                var tokens = scanner.nextLine().split("\\s+");
+                if (tokens[0].charAt(0) == '%') {
+                    if (tokens[0].equals("%Initial")) {
+                        for (int i = 1; i < tokens.length; ++i) {
+                            aut.setInitial(getStateFromId.apply(tokens[i]), true);
+                        }
+                    } else if (tokens[0].equals("%Final")) {
+                        for (int i = 1; i < tokens.length; ++i) {
+                            aut.setAccepting(getStateFromId.apply(tokens[i]), true);
+                        }
+                    }
+                } else {
+                    // transition
+                    if (tokens.length != 3) {
+                        throw new RuntimeException("transition was not given as 'state symbol state' (there might be whitespaces in symbol)");
+                    }
+
+                    aut.addTransition(
+                            getStateFromId.apply(tokens[0]),
+                            symbolToInt.get(tokens[1]),
+                            getStateFromId.apply(tokens[2])
+                    );
+                }
+            }
+        }
+//        System.out.println("NFA:");
+//        GraphDOT.write(aut, automatalibAlph, System.out);
+        var detAut = NFAs.determinize(aut);
+//        System.out.println("DFA:");
+//        GraphDOT.write(detAut, automatalibAlph, System.out);
+        return detAut;
+    }
+
+    public void intializeExplicitAlphabet(List<String> fileNames) throws FileNotFoundException {
+        for (String fileName : fileNames) {
+            try (Scanner scanner = new Scanner(new File(fileName))) {
+                while(scanner.hasNextLine()) {
+                    var tokens= scanner.nextLine().split("\\s+");
+                    if (tokens[0].charAt(0) == '@') {
+                        if (!tokens[0].equals("@NFA-explicit")) {
+                            throw new RuntimeException("symbols can only be parsed from explicit NFA");
+                        }
+                    } else if (tokens[0].charAt(0) != '%') {
+                        String symbol = tokens[1];
+                        if (!symbolToInt.containsKey(symbol)) {
+                            symbolToInt.put(symbol, symbolToInt.size());
+                        }
+                    }
+                }
+            }
+        }
+
+        automatalibAlph = Alphabets.integers(0, symbolToInt.size() - 1);
+    }
+
+    // transform mata to brics format, if explicit automaton, expects the alphabet to be initialized using initializeExplicitAlphabet
+    public Automaton mataToBrics(String fileName) throws IOException {
         // lambda that takes string and returns state for it
         var idToState = new HashMap<String, State>();
         Function<String,State> getStateFromId = stateId -> {
@@ -19,15 +112,6 @@ public class MataFormat {
                 idToState.put(stateId, new State());
             }
             return idToState.get(stateId);
-        };
-
-        // lambda that takes symbol (string) and returns char representing it
-        var symbolToChar = new HashMap<String, Character>();
-        Function<String,Character> getCharFromSymbol = symbol -> {
-            if (!symbolToChar.containsKey(symbol)) {
-                symbolToChar.put(symbol, (char) symbolToChar.size());
-            }
-            return symbolToChar.get(symbol);
         };
 
         Automaton aut = new Automaton();
@@ -75,8 +159,8 @@ public class MataFormat {
                         int intervalEnd = Integer.parseInt(interval[1]);
                         stateFrom.addTransition(new Transition((char) intervalStart, (char) intervalEnd, stateTo));
                     } else {
-                        char symbol = getCharFromSymbol.apply(tokens[1]);
-                        stateFrom.addTransition(new Transition(symbol, stateTo));
+                        int symbol = symbolToInt.get(tokens[1]);
+                        stateFrom.addTransition(new Transition((char) symbol, stateTo));
                     }
                 }
             }
