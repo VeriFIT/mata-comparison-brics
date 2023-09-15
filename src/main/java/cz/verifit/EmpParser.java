@@ -1,60 +1,28 @@
 package cz.verifit;
 
-import cz.verifit.capnp.Afa.Model.Separated;
 import dk.brics.automaton.Automaton;
-import dk.brics.automaton.State;
-import dk.brics.automaton.Transition;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 public class EmpParser {
-    private Map<Integer, Automaton> idToAutomaton = new HashMap<Integer, Automaton>();
-    private String pathToAutomata = "gen_aut/";
-    private int autNumToCheck = -1;
-    private int autNumToCheck1 = -1;
-    private int autNumToCheck2 = -1;
-    private boolean alwaysMinimize = false;
+    private Map<Integer, Automaton> idToAutomaton = new HashMap<>();
+    private ArrayList<String> pathsToAutomata;
+    private long startTime;
 
-    private Automaton readFromRange16Nfa(String fileName) throws IOException {
-        org.capnproto.MessageReader message = org.capnproto.Serialize.read((new java.io.FileInputStream(fileName)).getChannel());
-        Separated.Range16Nfa.Reader nfa = message.getRoot(Separated.Range16Nfa.factory);
+    void startTimer() {
+        startTime = System.nanoTime();
+    }
 
-        var idToState = new HashMap<Integer, State>();
-
-        var transitions = nfa.getStates();
-        var numOfStates = transitions.size();
-        for (int stateFromId = 0; stateFromId < numOfStates; ++stateFromId) {
-            idToState.put(stateFromId, new State());
-        }
-
-        for (int stateFromId = 0; stateFromId < numOfStates; ++stateFromId) {
-            State stateFrom = idToState.get(stateFromId);
-            for (var transitionsFromState : transitions.get(stateFromId)) {
-                State stateTo = idToState.get(transitionsFromState.getState());
-                for (var range : transitionsFromState.getRanges()) {
-                    Transition trans = new Transition((char) range.getBegin(), (char) range.getEnd(), stateTo);
-                    stateFrom.addTransition(trans);
-                }
-            }
-        }
-
-        for (int i = 0; i < nfa.getFinals().size(); ++i) {
-            idToState.get(nfa.getFinals().get(i)).setAccept(true);
-        }
-
-        Automaton aut = new Automaton();
-        aut.setInitialState(idToState.get(nfa.getInitial()));
-        aut.setDeterministic(false);
-        aut.restoreInvariant();
-        if (alwaysMinimize) {
-            aut.minimize();
-        }
-        return aut;
+    void endTimer(String name) {
+        long elapsedTime = System.nanoTime() - startTime;
+        double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
+        System.out.println(name + ": " + elapsedTimeInSecond);
     }
 
     private int getAutNumFromName(String name)
@@ -74,21 +42,54 @@ public class EmpParser {
             if (tokens.length != 2) {
                 throw new RuntimeException("load_automaton expects exactly one automaton to load");
             }
-            idToAutomaton.put(getAutNumFromName(tokens[1]), readFromRange16Nfa(Paths.get(pathToAutomata, tokens[1] + ".range16nfa").toString()));
+            int autNum = getAutNumFromName(tokens[1]);
+
+            startTimer();
+            idToAutomaton.put(autNum, MataFormat.mataToBrics(pathsToAutomata.get(autNum-1)));
+            endTimer("construction");
+        }
+        else if (tokens[0].equals("load_automata"))
+        {
+            for (int i = 0; i < pathsToAutomata.size(); ++i) {
+                startTimer();
+                idToAutomaton.put(i+1, MataFormat.mataToBrics(pathsToAutomata.get(i)));
+                endTimer("construction");
+            }
         }
         else if (tokens[0].equals("is_empty"))
         {
             if (tokens.length != 2) {
                 throw new RuntimeException("is_empty expects exactly one automaton to check for emptiness");
             }
-            autNumToCheck = getAutNumFromName(tokens[1]);
+            startTimer();
+            Boolean is_empty = idToAutomaton.get(getAutNumFromName(tokens[1])).isEmpty();
+            endTimer("emptiness_check");
+            System.out.println("emptiness_result: " + is_empty);
         }
         else if (tokens[0].equals("incl")) {
             if (tokens.length != 3) {
                 throw new RuntimeException("incl expects exactly two automata to check for inclusion");
             }
-            autNumToCheck1 = getAutNumFromName(tokens[1]);
-            autNumToCheck2 = getAutNumFromName(tokens[2]);
+            int aut1 = getAutNumFromName(tokens[1]);
+            int aut2 = getAutNumFromName(tokens[2]);
+            startTimer();
+            Boolean is_included = idToAutomaton.get(aut1).subsetOf(idToAutomaton.get(aut2));
+            endTimer("inclusion_check");
+            System.out.println("inclusion_result: " + is_included);
+        }
+        else if (tokens[1].equals("interall"))
+        {
+            Automaton result = null;
+            startTimer();
+            for (Automaton aut : idToAutomaton.values()) {
+                if (result == null) {
+                    result = aut;
+                } else {
+                    result = result.intersection(aut);
+                }
+            }
+            endTimer("interall");
+            idToAutomaton.put(getAutNumFromName(tokens[0]), result);
         }
         else {
             if (tokens.length < 3) {
@@ -103,7 +104,9 @@ public class EmpParser {
 
             if (tokens[1].equals("compl"))
             {
+                startTimer();
                 idToAutomaton.put(getAutNumFromName(tokens[0]), result.complement());
+                endTimer("compl");
             }
             else
             {
@@ -117,11 +120,15 @@ public class EmpParser {
 
                     if (tokens[1].equals("union"))
                     {
+                        startTimer();
                         result = result.union(operand);
+                        endTimer("uni");
                     }
                     else if (tokens[1].equals("inter"))
                     {
+                        startTimer();
                         result = result.intersection(operand);
+                        endTimer("intersection");
                     }
                     else {
                         throw new RuntimeException("Unknown operation");
@@ -132,30 +139,12 @@ public class EmpParser {
         }
     }
 
-    public boolean parseAndCheckEmptiness(String fileName, boolean alwaysMinimize) throws IOException {
-        Automaton.setMinimizeAlways(alwaysMinimize);
-        this.alwaysMinimize = alwaysMinimize;
-
-        File inputFile = new File(fileName);
-        pathToAutomata = Paths.get(inputFile.getAbsoluteFile().getParent(), "gen_aut/").toString();
-        Scanner scanner = new Scanner(inputFile);
-        while (scanner.hasNextLine()) {
-            readLine(scanner.nextLine());
-        }
-
-        if (autNumToCheck == -1) {
-            if (autNumToCheck1 == -1 || autNumToCheck2 == -1) {
-                throw new RuntimeException("No check for emptyness or inclusion found in emp file");
+    public void parseAndInterpret(String fileName, ArrayList<String> pathsToAutomata) throws IOException {
+        this.pathsToAutomata = pathsToAutomata;
+        try (Scanner scanner = new Scanner(new File(fileName))) {
+            while (scanner.hasNextLine()) {
+                readLine(scanner.nextLine());
             }
-            if (!idToAutomaton.containsKey(autNumToCheck1) || !idToAutomaton.containsKey(autNumToCheck2)) {
-                throw new RuntimeException("Trying to check inclusion of undefined automata");
-            }
-            return idToAutomaton.get(autNumToCheck1).subsetOf(idToAutomaton.get(autNumToCheck2));
-        } else {
-            if (!idToAutomaton.containsKey(autNumToCheck)) {
-                throw new RuntimeException("Trying to check emptiness of undefined automaton");
-            }
-            return idToAutomaton.get(autNumToCheck).isEmpty();
         }
     }
 }
