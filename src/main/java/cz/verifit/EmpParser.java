@@ -149,16 +149,18 @@ public class EmpParser {
                 throw new RuntimeException("Reading operation with not enough arguments");
             }
 
-            if (!idToAutomatonBrics.containsKey(getAutNumFromName(tokens[2])))
+            var first_operand_id = getAutNumFromName(tokens[2]);
+
+            if ((automatalib && !idToAutomatonAutomatalib.containsKey(first_operand_id)) || (!automatalib && !idToAutomatonBrics.containsKey(first_operand_id)))
             {
                 throw new RuntimeException("Trying to apply operation on not already parsed/processed automaton");
             }
             Automaton resultBrics = null;
             CompactDFA<Integer> resultAutomatalib = null;
             if (automatalib) {
-                resultAutomatalib = idToAutomatonAutomatalib.get(tokens[2]);
+                resultAutomatalib = idToAutomatonAutomatalib.get(first_operand_id);
             } else {
-                resultBrics = idToAutomatonBrics.get(getAutNumFromName(tokens[2]));
+                resultBrics = idToAutomatonBrics.get(first_operand_id);
             }
 
             if (tokens[1].equals("compl"))
@@ -175,7 +177,8 @@ public class EmpParser {
             {
                 for (int i = 3; i < tokens.length; i++)
                 {
-                    if (!idToAutomatonBrics.containsKey(getAutNumFromName(tokens[i])))
+                    var operand_id = getAutNumFromName(tokens[i]);
+                    if ((automatalib && !idToAutomatonAutomatalib.containsKey(operand_id)) || (!automatalib && !idToAutomatonBrics.containsKey(operand_id)))
                     {
                         throw new RuntimeException("Trying to apply operation on not already parsed/processed automaton");
                     }
@@ -184,9 +187,9 @@ public class EmpParser {
                     {
                         startTimer();
                         if (automatalib) {
-                            resultAutomatalib = DFAs.or(resultAutomatalib, idToAutomatonAutomatalib.get(getAutNumFromName(tokens[i])), parser.automatalibAlph);
+                            resultAutomatalib = DFAs.or(resultAutomatalib, idToAutomatonAutomatalib.get(operand_id), parser.automatalibAlph);
                         } else {
-                            resultBrics = resultBrics.union(idToAutomatonBrics.get(getAutNumFromName(tokens[i])));
+                            resultBrics = resultBrics.union(idToAutomatonBrics.get(operand_id));
                         }
                         endTimer("uni");
                     }
@@ -194,9 +197,9 @@ public class EmpParser {
                     {
                         startTimer();
                         if (automatalib) {
-                            resultAutomatalib = DFAs.and(resultAutomatalib, idToAutomatonAutomatalib.get(getAutNumFromName(tokens[i])), parser.automatalibAlph);
+                            resultAutomatalib = DFAs.and(resultAutomatalib, idToAutomatonAutomatalib.get(operand_id), parser.automatalibAlph);
                         } else {
-                            resultBrics = resultBrics.intersection(idToAutomatonBrics.get(getAutNumFromName(tokens[i])));
+                            resultBrics = resultBrics.intersection(idToAutomatonBrics.get(operand_id));
                         }
                         endTimer("intersection");
                     }
@@ -226,6 +229,8 @@ public class EmpParser {
 
         if (explicit) {
             parser.intializeExplicitAlphabet(pathsToAutomata);
+        } else if (automatalib) {
+            throw new RuntimeException("automatalib can only parse explicit automata");
         }
 
         try (Scanner scanner = new Scanner(new File(fileName))) {
