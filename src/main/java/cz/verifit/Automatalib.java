@@ -14,6 +14,7 @@ public class Automatalib {
         } else {
             System.err.println("error: Program expects at least one argument: path to .emp file and paths to automata");
             System.exit(1);
+            return;
         }
 
         try {
