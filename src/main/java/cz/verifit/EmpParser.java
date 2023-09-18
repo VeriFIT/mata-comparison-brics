@@ -78,9 +78,9 @@ public class EmpParser {
             for (int i = 0; i < pathsToAutomata.size(); ++i) {
                 startTimer();
                 if (automatalib) {
-                    idToAutomatonAutomatalib.put(idToAutomatonAutomatalib.size(), parser.mataToAutomatalib(pathsToAutomata.get(i)));
+                    idToAutomatonAutomatalib.put(i+1, parser.mataToAutomatalib(pathsToAutomata.get(i)));
                 } else {
-                    idToAutomatonBrics.put(idToAutomatonBrics.size(), parser.mataToBrics(pathsToAutomata.get(i)));
+                    idToAutomatonBrics.put(i+1, parser.mataToBrics(pathsToAutomata.get(i)));
                 }
                 endTimer("construction");
             }
