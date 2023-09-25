@@ -1,6 +1,7 @@
 package cz.verifit;
 
 import dk.brics.automaton.Automaton;
+import dk.brics.automaton.BasicOperations;
 import net.automatalib.automata.fsa.impl.compact.CompactDFA;
 import net.automatalib.serialization.dot.GraphDOT;
 import net.automatalib.util.automata.fsa.DFAs;
@@ -11,10 +12,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class EmpParser {
@@ -120,8 +118,8 @@ public class EmpParser {
         }
         else if (tokens[1].equals("interall"))
         {
-            startTimer();
             if (automatalib) {
+                startTimer();
                 CompactDFA<Integer> result = null;
                 for (var aut : idToAutomatonAutomatalib.values()) {
                     if (result == null) {
@@ -131,7 +129,9 @@ public class EmpParser {
                     }
                 }
                 idToAutomatonAutomatalib.put(getAutNumFromName(tokens[0]), result);
+                endTimer("interall");
             } else {
+                startTimer();
                 Automaton result = null;
                 for (Automaton aut : idToAutomatonBrics.values()) {
                     if (result == null) {
@@ -141,10 +141,22 @@ public class EmpParser {
                     }
                 }
                 idToAutomatonBrics.put(getAutNumFromName(tokens[0]), result);
+                endTimer("interall");
             }
-            endTimer("interall");
         }
-        else {
+        else if (tokens[1].equals("concat"))
+        {
+            if (automatalib) {
+                throw new RuntimeException("Automatalib cannot do concatenation");
+            } else {
+                startTimer();
+                var res = BasicOperations.concatenate(Arrays.stream(tokens).skip(2).map(aut -> idToAutomatonBrics.get(getAutNumFromName(aut))).toList());
+                endTimer("concat");
+                idToAutomatonBrics.put(getAutNumFromName(tokens[0]), res);
+            }
+        }
+        else
+        {
             if (tokens.length < 3) {
                 throw new RuntimeException("Reading operation with not enough arguments");
             }
