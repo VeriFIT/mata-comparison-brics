@@ -183,7 +183,6 @@ public class MataFormat {
 
         aut.setDeterministic(false);
         aut.restoreInvariant();
-        aut.reduce();
         return aut;
     }
 
