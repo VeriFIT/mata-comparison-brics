@@ -11,7 +11,7 @@ To run brics:
 ```
 java -jar target/brics-emp-interpreter.jar path/to/file.emp path/to/automaton1.mata [path/to/automaton2.mata ...]
 ```
-Both explicit and interval automata can be used for brics.
+Both explicit and interval automata can be used for brics. Note that brics always assume alphabet 0-65,535, so it can give incorrect results for complement.
 
 To run automatalib:
 ```
