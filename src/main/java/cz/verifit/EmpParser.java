@@ -144,6 +144,34 @@ public class EmpParser {
                 endTimer("interall");
             }
         }
+        else if (tokens[1].equals("unionall"))
+        {
+            if (automatalib) {
+                startTimer();
+                CompactDFA<Integer> result = null;
+                for (var aut : idToAutomatonAutomatalib.values()) {
+                    if (result == null) {
+                        result = aut;
+                    } else {
+                        result = DFAs.or(result, aut, parser.automatalibAlph);
+                    }
+                }
+                idToAutomatonAutomatalib.put(getAutNumFromName(tokens[0]), result);
+                endTimer("uni");
+            } else {
+                startTimer();
+                Automaton result = null;
+                for (Automaton aut : idToAutomatonBrics.values()) {
+                    if (result == null) {
+                        result = aut;
+                    } else {
+                        result = result.union(aut);
+                    }
+                }
+                idToAutomatonBrics.put(getAutNumFromName(tokens[0]), result);
+                endTimer("uni");
+            }
+        }
         else if (tokens[1].equals("concat"))
         {
             if (automatalib) {
