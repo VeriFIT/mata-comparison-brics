@@ -18,7 +18,8 @@ import java.util.concurrent.TimeUnit;
 public class EmpParser {
     private Map<Integer, Automaton> idToAutomatonBrics = new HashMap<>();
     private Map<Integer, CompactDFA<Integer>> idToAutomatonAutomatalib = new HashMap<>();
-    private ArrayList<String> pathsToAutomata;
+    private ArrayList<Automaton> bricsAutomata;
+    private ArrayList<CompactDFA<Integer>> automatalibAutomata;
     private long startTime;
     private MataFormat parser = new MataFormat();
     Boolean explicit;
@@ -61,28 +62,27 @@ public class EmpParser {
             }
             int autNum = getAutNumFromName(tokens[1]);
 
-            startTimer();
             if (automatalib) {
-                idToAutomatonAutomatalib.put(autNum, parser.mataToAutomatalib(pathsToAutomata.get(0)));
-
+                idToAutomatonAutomatalib.put(autNum, automatalibAutomata.get(0));
+                automatalibAutomata.remove(0);
             } else {
-                idToAutomatonBrics.put(autNum, parser.mataToBrics(pathsToAutomata.get(0)));
+                idToAutomatonBrics.put(autNum, bricsAutomata.get(0));
+                bricsAutomata.remove(0);
             }
-            endTimer("construction");
-            pathsToAutomata.remove(0);
         }
         else if (tokens[0].equals("load_automata"))
         {
-            for (int i = 0; i < pathsToAutomata.size(); ++i) {
-                startTimer();
-                if (automatalib) {
-                    idToAutomatonAutomatalib.put(i+1, parser.mataToAutomatalib(pathsToAutomata.get(i)));
-                } else {
-                    idToAutomatonBrics.put(i+1, parser.mataToBrics(pathsToAutomata.get(i)));
+            if (automatalib) {
+                for (int i = 0; i < automatalibAutomata.size(); ++i) {
+                    idToAutomatonAutomatalib.put(i + 1, automatalibAutomata.get(i));
+                    automatalibAutomata.clear();
                 }
-                endTimer("construction");
+            } else {
+                for (int i = 0; i < bricsAutomata.size(); ++i) {
+                    idToAutomatonBrics.put(i+1, bricsAutomata.get(i));
+                    bricsAutomata.clear();
+                }
             }
-            pathsToAutomata.clear();
         }
         else if (tokens[0].equals("is_empty"))
         {
@@ -257,7 +257,8 @@ public class EmpParser {
     }
 
     public void parseAndInterpret(String fileName, ArrayList<String> pathsToAutomata, Boolean automatalib) throws IOException {
-        this.pathsToAutomata = pathsToAutomata;
+        long overallStartTime = System.nanoTime();
+
         this.automatalib = automatalib;
         try (var r = new BufferedReader(new FileReader(pathsToAutomata.get(0)))) {
             if (r.readLine().equals("@NFA-explicit")) {
@@ -273,10 +274,30 @@ public class EmpParser {
             throw new RuntimeException("automatalib can only parse explicit automata");
         }
 
+        for (var path : pathsToAutomata) {
+            startTimer();
+            if (automatalib) {
+                automatalibAutomata.add(parser.mataToAutomatalib(path));
+            } else {
+                bricsAutomata.add(parser.mataToBrics(path));
+            }
+            endTimer("construction");
+        }
+
+        long empStartTime = System.nanoTime();
+
         try (Scanner scanner = new Scanner(new File(fileName))) {
             while (scanner.hasNextLine()) {
                 readLine(scanner.nextLine());
             }
         }
+
+        long elapsedTime = System.nanoTime() - empStartTime;
+        double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
+        System.out.println("interpretation: " + elapsedTimeInSecond);
+
+        elapsedTime = System.nanoTime() - overallStartTime;
+        elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
+        System.out.println("overall: " + elapsedTimeInSecond);
     }
 }
