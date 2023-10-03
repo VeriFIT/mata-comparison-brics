@@ -18,8 +18,8 @@ import java.util.concurrent.TimeUnit;
 public class EmpParser {
     private Map<Integer, Automaton> idToAutomatonBrics = new HashMap<>();
     private Map<Integer, CompactDFA<Integer>> idToAutomatonAutomatalib = new HashMap<>();
-    private ArrayList<Automaton> bricsAutomata;
-    private ArrayList<CompactDFA<Integer>> automatalibAutomata;
+    private ArrayList<Automaton> bricsAutomata = new ArrayList<>();
+    private ArrayList<CompactDFA<Integer>> automatalibAutomata = new ArrayList<>();
     private long startTime;
     private MataFormat parser = new MataFormat();
     Boolean explicit;
