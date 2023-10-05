@@ -75,13 +75,13 @@ public class EmpParser {
             if (automatalib) {
                 for (int i = 0; i < automatalibAutomata.size(); ++i) {
                     idToAutomatonAutomatalib.put(i + 1, automatalibAutomata.get(i));
-                    automatalibAutomata.clear();
                 }
+                automatalibAutomata.clear();
             } else {
                 for (int i = 0; i < bricsAutomata.size(); ++i) {
                     idToAutomatonBrics.put(i+1, bricsAutomata.get(i));
-                    bricsAutomata.clear();
                 }
+                bricsAutomata.clear();
             }
         }
         else if (tokens[0].equals("is_empty"))
