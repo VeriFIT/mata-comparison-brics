@@ -79,7 +79,7 @@ public class EmpParser {
             if (automatalib) {
                 for (int i = 0; i < automatalibAutomata.size(); ++i) {
                     startTimer();
-                    idToAutomatonAutomatalib.put(i + 1, NFAs.determinize(automatalibAutomata.get(1)));
+                    idToAutomatonAutomatalib.put(i + 1, NFAs.determinize(automatalibAutomata.get(i)));
                     endTimer("determinize");
                 }
                 automatalibAutomata.clear();
