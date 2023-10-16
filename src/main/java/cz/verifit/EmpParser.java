@@ -2,9 +2,11 @@ package cz.verifit;
 
 import dk.brics.automaton.Automaton;
 import dk.brics.automaton.BasicOperations;
+import net.automatalib.automata.fsa.impl.FastNFA;
 import net.automatalib.automata.fsa.impl.compact.CompactDFA;
 import net.automatalib.serialization.dot.GraphDOT;
 import net.automatalib.util.automata.fsa.DFAs;
+import net.automatalib.util.automata.fsa.NFAs;
 import net.automatalib.util.automata.minimizer.hopcroft.HopcroftMinimization;
 import net.automatalib.util.minimizer.Minimizer;
 
@@ -19,7 +21,7 @@ public class EmpParser {
     private Map<Integer, Automaton> idToAutomatonBrics = new HashMap<>();
     private Map<Integer, CompactDFA<Integer>> idToAutomatonAutomatalib = new HashMap<>();
     private ArrayList<Automaton> bricsAutomata = new ArrayList<>();
-    private ArrayList<CompactDFA<Integer>> automatalibAutomata = new ArrayList<>();
+    private ArrayList<FastNFA<Integer>> automatalibAutomata = new ArrayList<>();
     private long startTime;
     private MataFormat parser = new MataFormat();
     Boolean explicit;
@@ -63,7 +65,9 @@ public class EmpParser {
             int autNum = getAutNumFromName(tokens[1]);
 
             if (automatalib) {
-                idToAutomatonAutomatalib.put(autNum, automatalibAutomata.get(0));
+                startTimer();
+                idToAutomatonAutomatalib.put(autNum, NFAs.determinize(automatalibAutomata.get(0)));
+                endTimer("determinize");
                 automatalibAutomata.remove(0);
             } else {
                 idToAutomatonBrics.put(autNum, bricsAutomata.get(0));
@@ -74,7 +78,9 @@ public class EmpParser {
         {
             if (automatalib) {
                 for (int i = 0; i < automatalibAutomata.size(); ++i) {
-                    idToAutomatonAutomatalib.put(i + 1, automatalibAutomata.get(i));
+                    startTimer();
+                    idToAutomatonAutomatalib.put(i + 1, NFAs.determinize(automatalibAutomata.get(1)));
+                    endTimer("determinize");
                 }
                 automatalibAutomata.clear();
             } else {

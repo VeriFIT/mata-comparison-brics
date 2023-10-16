@@ -24,7 +24,7 @@ public class MataFormat {
     private HashMap<String, Integer> symbolToInt = new HashMap<>();
     public Alphabet<Integer> automatalibAlph = null;
 
-    public CompactDFA<Integer> mataToAutomatalib(String fileName) throws IOException {
+    public FastNFA<Integer> mataToAutomatalib(String fileName) throws IOException {
         FastNFA<Integer> aut = new FastNFA<>(automatalibAlph);
         var a  = aut.addState();
 
@@ -75,10 +75,11 @@ public class MataFormat {
         }
 //        System.out.println("NFA:");
 //        GraphDOT.write(aut, automatalibAlph, System.out);
-        var detAut = NFAs.determinize(aut);
+        return aut;
+//        var detAut = NFAs.determinize(aut);
 //        System.out.println("DFA:");
 //        GraphDOT.write(detAut, automatalibAlph, System.out);
-        return detAut;
+//        return detAut;
     }
 
     public void intializeExplicitAlphabet(List<String> fileNames) throws FileNotFoundException {
