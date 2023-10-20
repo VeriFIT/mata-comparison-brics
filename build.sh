@@ -1,8 +1,10 @@
 #!/bin/bash
-basedir=$(realpath $(dirname "$0"))
+
+BASEDIR=$(realpath $(dirname "$0"))
+PROJECTDIR=$(realpath "$BASEDIR/../..")
 
 mvn clean package
 if [ $? -ne 0 ]; then
   exit 1
 fi
-cp $basedir/target/*-emp-interpreter.jar ~/bin/
+cp $BASEDIR/target/*-emp-interpreter.jar $PROJECTDIR/bin/
